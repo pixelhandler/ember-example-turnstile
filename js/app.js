@@ -28,7 +28,11 @@ App.IndexRoute = Ember.Route.extend({
 App.IndexController = Ember.Controller.extend({
   totalCoins: 0,
 
-  currentState: 'locked'
+  currentState: 'locked',
+
+  returnCoin: function(){
+    alert('Please take your coin');
+  }
 });
 
 App.BaseState = Ember.State.extend({
@@ -69,12 +73,13 @@ App.TurnstileManager =  Ember.StateManager.extend({
 
     exit: function( manager ){
       console.log( 'total coins:' + manager.get('context.controller.totalCoins') );
-    } 
+    }
   }),
 
   unlocked: App.BaseState.extend({
     coin: function( manager, context ){
       console.log('No coin needed, but thanks; try pushing.');
+      context.controller.returnCoin();
     },
 
     push: function( manager, context ){

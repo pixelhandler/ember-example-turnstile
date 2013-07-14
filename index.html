@@ -13,7 +13,8 @@
   <script type="text/x-handlebars" data-template-name="index">
     <button {{ action 'coin' controller}}>Coin</button>
     <button {{ action 'push' controller}}>Push</button>
-    <h3>{{ currentState }}</h3>
+    <h3>Turnstile is: {{ currentState }}</h3>
+    <p>Total Coins: {{ totalCoins }}</p>
   </script>
 
   <script src="js/libs/jquery-1.9.1.js"></script>
