@@ -1,26 +1,25 @@
 var App = Ember.Application.create({
   ready: function(){
-    console.log('ready');
     App.turnstileManager = App.TurnstileManager.create({
       enableLogging: true
     });
   }
 });
 
-App.Router.map(function() {
-  // put your routes here
-});
-
 App.IndexRoute = Ember.Route.extend({
+  setupController: function( controller ){
+    var manager = App.turnstileManager;
+    manager.set( 'controller', controller );
+    controller.send( 'state', manager.get( 'currentState.name' ) );
+  },
+
   events: {
     coin: function( controller ){
-      console.log('coin action');
-      App.turnstileManager.send( 'coin', { controller: controller } );
+      App.turnstileManager.send( 'coin', controller );
     },
 
     push: function( controller ){
-      console.log('push action');
-      App.turnstileManager.send( 'push', { controller: controller } );
+      App.turnstileManager.send( 'push', controller );
     }
   }
 });
@@ -28,10 +27,25 @@ App.IndexRoute = Ember.Route.extend({
 App.IndexController = Ember.Controller.extend({
   totalCoins: 0,
 
-  currentState: 'locked',
+  display: 'Please insert coin.',
 
-  returnCoin: function(){
-    alert('Please take your coin');
+  onCoin: function( display, isAccepted ){
+    this.set( 'display', display );
+    if( isAccepted ){
+      this.incrementProperty( 'totalCoins' );
+    }
+  },
+
+  onPush: function( display ){
+    this.set( 'display', display );
+  },
+
+  onSetup: function( display ){
+    this.set( 'display', display );
+  },
+
+  state: function( name ){
+    this.set( 'currentState', name );
   }
 });
 
@@ -40,20 +54,17 @@ App.BaseState = Ember.State.extend({
     console.log( manager.toString() + ': unhandledEvent with name ' + eventName );
   },
 
-  enter: function( manager ){
-    console.log('entering');
-  },
+  enter: function( /*manager*/ ){},
 
   setup: function( manager, context ){
-    console.log('setup');
-    if( context && context.controller ){
-      context.controller.set( 'currentState', manager.get('currentState.name') );
+    var controller = ( context ) ? context : manager.get('controller');
+    if( controller ){
+      controller.send( 'state', manager.get('currentState.name') );
+      controller.send( 'onSetup', 'Please insert coin.' );
     }
   },
 
-  exit: function( manager ){
-    console.log('exiting');
-  }
+  exit: function( /*manager*/ ){}
 });
 
 App.TurnstileManager =  Ember.StateManager.extend({
@@ -61,30 +72,37 @@ App.TurnstileManager =  Ember.StateManager.extend({
 
   locked: App.BaseState.extend({
     coin: function( manager, context ){
-      console.log('Thanks for the coin :)');
-      context.controller.incrementProperty('totalCoins');
-      manager.set('context', context);
+      context.send( 'onCoin', 'Payment accepted.', true );
       manager.transitionTo( 'unlocked', context );
     },
 
     push: function( manager, context ){
-      console.log('Sorry, coin required to pass through the turnstile.');
-    },
-
-    exit: function( manager ){
-      console.log( 'total coins:' + manager.get('context.controller.totalCoins') );
+      context.send( 'onPush', 'Coin required, please insert coin.');
     }
   }),
 
   unlocked: App.BaseState.extend({
+    setup: function( manager, context ){
+      context.send( 'state', manager.get( 'currentState.name' ) );
+      context.send( 'onSetup', 'Please proceed.');
+    },
+
     coin: function( manager, context ){
-      console.log('No coin needed, but thanks; try pushing.');
-      context.controller.returnCoin();
+      context.send( 'onCoin', 'No coin needed. Try pushing.', false );
     },
 
     push: function( manager, context ){
-      console.log('You may pass through the turnstile.');
-      manager.transitionTo( 'locked', context );
-    }
+      manager.transitionTo( 'inUse', context );
+    },
+
+    inUse: App.BaseState.extend({
+      setup: function( manager, context ){
+        context.send( 'state', manager.get( 'currentState.name' ) );
+        context.send( 'onSetup', 'Please wait.');
+        Ember.run.later(function(){
+          manager.transitionTo( 'locked', context );
+        }, 1500);
+      }
+    })
   })
 });

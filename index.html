@@ -11,10 +11,13 @@
   </script>
 
   <script type="text/x-handlebars" data-template-name="index">
-    <button {{ action 'coin' controller}}>Coin</button>
-    <button {{ action 'push' controller}}>Push</button>
-    <h3>Turnstile is: {{ currentState }}</h3>
-    <p>Total Coins: {{ totalCoins }}</p>
+    <button {{ action 'coin' controller }}>Coin</button>
+    <button {{ action 'push' controller }}>Push</button>
+    <h3>{{ display }}</h3>
+    <p>
+      Turnstile is: {{ currentState }}<br/>
+      Total Coins: {{ totalCoins }}
+    </p>
   </script>
 
   <script src="js/libs/jquery-1.9.1.js"></script>
